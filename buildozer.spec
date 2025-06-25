@@ -9,10 +9,6 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 1.0
 requirements = python3,kivy,opencv,pyzbar,pillow,numpy
 
-[buildozer]
-log_level = 2
-
-[app]
 # Android specific
 android.permissions = CAMERA, WRITE_EXTERNAL_STORAGE, VIBRATE
 android.api = 30
@@ -27,3 +23,6 @@ android.gradle_dependencies =
 # Skip some checks for faster builds
 android.skip_update = False
 android.debug = 1
+
+[buildozer]
+log_level = 2
