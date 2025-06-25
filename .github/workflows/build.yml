@@ -21,63 +21,12 @@ jobs:
             mv buildozer.spec.ini buildozer.spec
           fi
 
-      - name: Install system build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip python3-setuptools python3-dev python3-venv \
-            git unzip zip \
-            openjdk-17-jdk \
-            autoconf automake libtool pkg-config \
-            libjpeg-dev zlib1g-dev \
-            build-essential libssl-dev libffi-dev \
-            libncurses5-dev libsqlite3-dev libreadline-dev libbz2-dev \
-            cmake
-
-      - name: Fix autotools macros
-        run: |
-          # Update autotools to latest versions
-          sudo apt-get install -y autotools-dev
-          
-          # Create macro file to handle missing LT_SYS_SYMBOL_USCORE
-          sudo mkdir -p /usr/share/aclocal
-          echo 'AC_DEFUN([LT_SYS_SYMBOL_USCORE], [])' | sudo tee /usr/share/aclocal/lt_sys_symbol_uscore.m4
-          
-          # Regenerate autotools files
-          sudo autoreconf -fiv || true
-
-      - name: Setup Python environment
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install --upgrade cython==0.29.33
-
-      - name: Install Buildozer and dependencies
-        run: |
-          python3 -m pip install --upgrade buildozer
-          python3 -m pip install --upgrade python-for-android
-
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v3
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
-
-      - name: Cache Buildozer local directory
-        uses: actions/cache@v3
-        with:
-          path: .buildozer
-          key: buildozer-local-${{ hashFiles('buildozer.spec') }}
-
-      - name: Build APK
-        run: |
-          # Set environment variables for build
-          export ANDROIDSDK="$HOME/.buildozer/android/platform/android-sdk"
-          export ANDROIDNDK="$HOME/.buildozer/android/platform/android-ndk-r25c"
-          export ANDROIDAPI="30"
-          export NDKAPI="21"
-          
-          # Build with verbose output
-          buildozer android debug --verbose
+          command: buildozer android debug
+          buildozer_version: master
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
