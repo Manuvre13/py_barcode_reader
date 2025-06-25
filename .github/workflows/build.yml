@@ -5,28 +5,44 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip python3-setuptools git python3 python3-pil python3-kivy openjdk-17-jdk unzip zip
-        pip install --upgrade pip
-        pip install cython buildozer
+      - name: Rename spec file if needed (prevent failure)
+        run: |
+          if [ -f buildozer.spec.ini ]; then
+            mv buildozer.spec.ini buildozer.spec
+          fi
 
-    - name: Build APK
-      run: buildozer android debug --verbose
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip python3-setuptools python3 \
+            git unzip zip \
+            openjdk-17-jdk \
+            autoconf automake libtool pkg-config
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: apk
-        path: bin/*.apk
+      - name: Install Python & Buildozer dependencies
+        run: |
+          pip install --upgrade pip
+          pip install cython buildozer docwriter
+
+      - name: Regenerate Autoconf macros
+        run: autoupdate || true
+
+      - name: Build APK with Buildozer
+        run: buildozer android debug --verbose
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: bin/*.apk
