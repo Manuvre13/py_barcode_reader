@@ -38,7 +38,8 @@ jobs:
         buildozer_version: master
 
     - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
+
       with:
         name: barcode-reader-apk
         path: bin/*.apk
