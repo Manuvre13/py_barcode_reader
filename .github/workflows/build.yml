@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Rename spec file if needed (prevent failure)
+      - name: Rename spec file if misnamed
         run: |
           if [ -f buildozer.spec.ini ]; then
             mv buildozer.spec.ini buildozer.spec
@@ -25,23 +25,34 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            python3-pip python3-setuptools python3 \
-            git unzip zip \
+            python3 python3-pip python3-setuptools git unzip zip \
             openjdk-17-jdk \
-            autoconf automake libtool pkg-config
+            autoconf automake libtool pkg-config \
+            libjpeg-dev zlib1g-dev
 
       - name: Install Python & Buildozer dependencies
         run: |
           pip install --upgrade pip
           pip install cython buildozer docwriter
 
-      - name: Regenerate Autoconf macros
-        run: autoupdate || true
+      - name: Regenerate autotools (skip if configure.ac missing)
+        run: |
+          if [ -f configure.ac ]; then
+            echo "Running autoupdate..."
+            autoupdate || true
+            autoreconf -i || true
+          else
+            echo "No configure.ac found — skipping autoupdate steps."
+          fi
 
-      - name: Build APK with Buildozer
+      - name: Allow undefined macros (patch step, optional)
+        run: |
+          echo 'm4_pattern_allow([LT_SYS_SYMBOL_USCORE])' > lt_patch.m4 || true
+
+      - name: Build APK
         run: buildozer android debug --verbose
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: apk
